@@ -1,10 +1,10 @@
-# FeedbackIQ — AI-Powered Customer Feedback Intelligence Platform
+# FeedbackIQ - AI-Powered Customer Feedback Intelligence Platform
 
-**FeedbackIQ** is an AI/ML intelligence platform that collects customer feedback across sources, analyzes sentiment & priority, generates sentence embeddings, groups semantically similar feedback into issue clusters, and generates technical summaries using LLMs.
+FeedbackIQ is an AI/ML intelligence platform that collects customer feedback across sources, analyzes sentiment and priority, generates sentence embeddings, groups semantically similar feedback into issue clusters, and generates technical summaries using LLMs.
 
 ---
 
-## 🚀 Part 1 (MVP) Features Implemented
+## Part 1 (MVP) Features Implemented
 
 1. **CSV Feedback Ingestion**: Upload any `.csv` file with automatic column detection (`review`, `text`, `comment`, `date`).
 2. **Manual Feedback Entry**: Add customer complaints in real-time with instant VADER sentiment and technical priority classification.
@@ -12,7 +12,7 @@
 4. **Feedback Explorer (`/feedback`)**: Filter by sentiment (positive, neutral, negative), priority (critical, high, moderate, low), relevance toggle, full-text search, and pagination.
 5. **Sentence Embeddings (`/api/issues/cluster`)**: Dense 128-dim normalized semantic vectors capturing word relationships and technical patterns.
 6. **Semantic Clustering**: Agglomerative / KMeans clustering with cosine distance metrics.
-7. **AI Summarization & Naming**: Automatic technical title generation, categorization, and problem synthesis (using OpenAI or built-in deterministic NLP fallback).
+7. **AI Summarization and Naming**: Automatic technical title generation, categorization, and problem synthesis (using OpenAI or built-in deterministic NLP fallback).
 8. **Issue Intelligence (`/issues`)**: Cluster cards showing complaint volume, category badges, keywords, and representative customer quotes, plus an interactive modal to view all complaints in any group.
 9. **Executive Dashboard (`/dashboard`)**:
    - 4 primary KPI cards (Total Feedback, Discovered Issues, Critical Count, Sentiment Index).
@@ -23,7 +23,7 @@
 
 ---
 
-## 🛠️ How to Run Locally
+## How to Run Locally
 
 ### 1. Start Backend (FastAPI)
 
@@ -43,4 +43,3 @@ cd feedbackiq/frontend
 npm run dev
 ```
 - Web Application: **http://localhost:3000**
-
