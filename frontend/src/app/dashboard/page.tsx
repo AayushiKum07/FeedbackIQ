@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import clsx from 'clsx';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import Header from '@/components/layout/Header';
 import SentimentChart from '@/components/charts/SentimentChart';
@@ -9,7 +10,7 @@ import TrendChart from '@/components/charts/TrendChart';
 import CategoryChart from '@/components/charts/CategoryChart';
 import Badge from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { OverviewStats } from '@/types';
+import { OverviewStats, EmergingIssue } from '@/types';
 import api from '@/lib/api';
 import {
   MessageSquare,
@@ -21,6 +22,9 @@ import {
   RefreshCw,
   CheckCircle2,
   Info,
+  Flame,
+  ShieldCheck,
+  Activity,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -28,6 +32,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [clusteringLoading, setClusteringLoading] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [emergingIssues, setEmergingIssues] = useState<EmergingIssue[]>([]);
+  const [emergingLoading, setEmergingLoading] = useState(true);
+  const [lookbackDays, setLookbackDays] = useState<number>(7);
 
   const fetchOverview = async () => {
     try {
@@ -41,16 +48,32 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchEmerging = async (days: number) => {
+    try {
+      setEmergingLoading(true);
+      const res = await api.get(`/issues/emerging?lookback_days=${days}`);
+      setEmergingIssues(res.data);
+    } catch (err) {
+      console.error('Failed to load emerging issues:', err);
+    } finally {
+      setEmergingLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchOverview();
   }, []);
+
+  useEffect(() => {
+    fetchEmerging(lookbackDays);
+  }, [lookbackDays]);
 
   const handleRunClustering = async () => {
     try {
       setClusteringLoading(true);
       const res = await api.post('/issues/cluster');
       setNotification(res.data.message);
-      await fetchOverview();
+      await Promise.all([fetchOverview(), fetchEmerging(lookbackDays)]);
     } catch (err: any) {
       alert('Clustering failed: ' + (err.response?.data?.detail || err.message));
     } finally {
@@ -198,6 +221,188 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Emerging Issues & Spike Detection Panel */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
+                <Flame className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-gray-900">Emerging Issues & Spike Detection</h3>
+                  <span className="text-[10px] bg-rose-100 text-rose-700 font-bold px-2 py-0.5 rounded-full uppercase">
+                    Phase 4
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Statistical anomaly alerts flagging clusters whose complaint volume is surging over historical baseline
+                </p>
+              </div>
+            </div>
+
+            {/* Lookback Window Toggle */}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <span className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                <Activity className="w-3.5 h-3.5" /> Baseline:
+              </span>
+              <div className="flex items-center bg-gray-100 p-0.5 rounded-xl border border-gray-200/60">
+                <button
+                  type="button"
+                  onClick={() => setLookbackDays(7)}
+                  className={clsx(
+                    'px-3 py-1 text-xs font-semibold rounded-lg transition-all',
+                    lookbackDays === 7
+                      ? 'bg-white text-indigo-600 shadow-xs'
+                      : 'text-gray-500 hover:text-gray-900'
+                  )}
+                >
+                  7 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLookbackDays(14)}
+                  className={clsx(
+                    'px-3 py-1 text-xs font-semibold rounded-lg transition-all',
+                    lookbackDays === 14
+                      ? 'bg-white text-indigo-600 shadow-xs'
+                      : 'text-gray-500 hover:text-gray-900'
+                  )}
+                >
+                  14 Days
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {emergingLoading ? (
+            <div className="py-10 flex flex-col items-center justify-center text-gray-400 text-xs gap-2">
+              <RefreshCw className="w-5 h-5 animate-spin text-indigo-500" />
+              <span>Analyzing historical complaint time-series...</span>
+            </div>
+          ) : emergingIssues.length === 0 ? (
+            <div className="py-8 px-4 text-center rounded-xl bg-gray-50/70 border border-dashed border-gray-200 flex flex-col items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2.5">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <h4 className="text-sm font-bold text-gray-900 mb-1">No Emerging Spikes Detected</h4>
+              <p className="text-xs text-gray-500 max-w-md">
+                All complaint clusters are operating within normal baseline volumes over the selected {lookbackDays}-day window. No statistical anomalies were identified.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {emergingIssues.map((issue) => (
+                <div
+                  key={issue.issue_id}
+                  className="p-5 rounded-xl border border-rose-200 bg-gradient-to-br from-rose-50/40 via-white to-amber-50/30 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge
+                          variant={
+                            issue.severity === 'critical'
+                              ? 'critical'
+                              : issue.severity === 'high'
+                              ? 'high'
+                              : 'medium'
+                          }
+                        >
+                          {issue.severity}
+                        </Badge>
+                        <Badge variant="info">{issue.category}</Badge>
+                      </div>
+                      <span className="text-xs font-extrabold text-rose-600 bg-rose-100/80 px-2.5 py-0.5 rounded-full whitespace-nowrap">
+                        +{issue.increase_pct}% spike
+                      </span>
+                    </div>
+
+                    <Link
+                      href="/issues"
+                      className="text-sm font-bold text-gray-900 hover:text-indigo-600 transition-colors line-clamp-1 mb-2.5 block"
+                    >
+                      {issue.issue_name}
+                    </Link>
+
+                    {/* Explainable Detection Reason Alert */}
+                    <div className="p-3 rounded-lg bg-white/95 border border-rose-100 text-xs text-gray-700 mb-3 flex items-start gap-2 shadow-2xs">
+                      <AlertTriangle className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                      <span className="leading-relaxed font-medium">{issue.detection_reason}</span>
+                    </div>
+
+                    {/* Volume statistics row */}
+                    <div className="grid grid-cols-3 gap-2 py-2 px-3 rounded-lg bg-gray-50/80 border border-gray-100 text-center mb-3">
+                      <div>
+                        <div className="text-[10px] text-gray-400 uppercase font-semibold">Spike Day</div>
+                        <div className="text-sm font-extrabold text-gray-900">{issue.current_count}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-gray-400 uppercase font-semibold">Baseline Avg</div>
+                        <div className="text-sm font-bold text-gray-600">{issue.baseline_avg}/day</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-gray-400 uppercase font-semibold">Z-Score</div>
+                        <div className="text-sm font-extrabold text-indigo-600">+{issue.z_score}σ</div>
+                      </div>
+                    </div>
+
+                    {/* Timeline visualization */}
+                    <div className="mb-2">
+                      <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                        <span>Daily Volume Timeline</span>
+                        <span>{issue.trend.length}d trend</span>
+                      </div>
+                      <div className="flex items-end gap-1.5 h-10 w-full pt-1">
+                        {issue.trend.map((pt, idx) => {
+                          const maxCount = Math.max(...issue.trend.map((t) => t.count), 1);
+                          const heightPct = Math.max((pt.count / maxCount) * 100, 10);
+                          const isLast = idx === issue.trend.length - 1;
+                          return (
+                            <div
+                              key={pt.date}
+                              className="flex-1 flex flex-col items-center group relative h-full justify-end"
+                            >
+                              <div
+                                style={{ height: `${heightPct}%` }}
+                                className={clsx(
+                                  'w-full rounded-xs transition-all',
+                                  isLast
+                                    ? 'bg-rose-500 group-hover:bg-rose-600'
+                                    : pt.count > 0
+                                    ? 'bg-indigo-300 group-hover:bg-indigo-400'
+                                    : 'bg-gray-200'
+                                )}
+                              />
+                              <div className="absolute bottom-full mb-1 hidden group-hover:flex flex-col items-center z-10 pointer-events-none">
+                                <span className="bg-gray-900 text-white text-[9px] px-1.5 py-0.5 rounded shadow whitespace-nowrap">
+                                  {pt.date}: {pt.count}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between mt-1">
+                    <span className="text-[11px] text-gray-400">
+                      Window: {new Date(issue.window_start).toLocaleDateString()} - {new Date(issue.window_end).toLocaleDateString()}
+                    </span>
+                    <Link
+                      href="/issues"
+                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+                    >
+                      Investigate Cluster <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Sentiment Breakdown */}
@@ -303,7 +508,10 @@ export default function DashboardPage() {
             <div className="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
               <span>FeedbackIQ MVP Pipeline v1.0</span>
               <button
-                onClick={fetchOverview}
+                onClick={() => {
+                  fetchOverview();
+                  fetchEmerging(lookbackDays);
+                }}
                 className="flex items-center gap-1.5 text-indigo-600 hover:underline font-semibold"
               >
                 <RefreshCw className="w-3.5 h-3.5" /> Refresh Data

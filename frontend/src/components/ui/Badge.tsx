@@ -3,7 +3,7 @@ import clsx from 'clsx';
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'positive' | 'negative' | 'neutral' | 'critical' | 'high' | 'moderate' | 'low' | 'info' | 'default';
+  variant?: 'positive' | 'negative' | 'neutral' | 'critical' | 'high' | 'moderate' | 'medium' | 'low' | 'info' | 'default';
   className?: string;
 }
 
@@ -15,6 +15,7 @@ export default function Badge({ children, variant = 'default', className }: Badg
     critical: 'bg-red-100 text-red-800 border-red-300 font-semibold',
     high: 'bg-amber-100 text-amber-800 border-amber-300 font-medium',
     moderate: 'bg-blue-50 text-blue-700 border-blue-200',
+    medium: 'bg-amber-50 text-amber-800 border-amber-300 font-medium',
     low: 'bg-gray-100 text-gray-700 border-gray-200',
     info: 'bg-indigo-50 text-indigo-700 border-indigo-200',
     default: 'bg-gray-100 text-gray-800 border-gray-200',

@@ -23,6 +23,24 @@ FeedbackIQ is an AI/ML intelligence platform that collects customer feedback acr
 
 ---
 
+## Phase 4: Emerging Issue Detection
+
+FeedbackIQ continuously evaluates customer complaints over time to automatically flag emerging clusters whose volume is spiking abnormally compared to historical baseline.
+
+- **Explainable Statistical Detection**: Uses rolling average, standard deviation, z-score, and percentage increase instead of opaque black-box models.
+- **Time-Series Aggregation**: Zero-fills missing dates and anchors window dynamically to latest database records.
+- **Noise Guardrails**:
+  - Current evaluation volume >= 3 complaints.
+  - At least 2 active days in baseline window.
+  - z-score >= 2.0 and volume increase >= 50%.
+- **Severity Classification**:
+  - Critical: z >= 3.5 or increase >= 200%.
+  - High: z >= 2.5 or increase >= 100%.
+  - Medium: z >= 2.0 and increase >= 50%.
+- **Interactive Dashboard Alert Feed**: Lookback toggle (7-day / 14-day), explainable detection reason, and daily volume trend timeline.
+
+---
+
 ## How to Run Locally
 
 ### 1. Start Backend (FastAPI)

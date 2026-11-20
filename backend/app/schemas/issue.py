@@ -45,3 +45,24 @@ class ClusteringRunResponse(BaseModel):
     silhouette_score: float
     message: str
 
+
+class TimeSeriesPoint(BaseModel):
+    date: str
+    count: int
+
+
+class EmergingIssueOut(BaseModel):
+    issue_id: str
+    issue_name: str
+    category: str
+    severity: str  # critical, high, medium
+    current_count: int
+    baseline_avg: float
+    increase_pct: float
+    z_score: float
+    detection_reason: str
+    window_start: datetime
+    window_end: datetime
+    trend: List[TimeSeriesPoint]
+
+

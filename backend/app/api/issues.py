@@ -13,7 +13,9 @@ from app.schemas.issue import (
     IssueClusterDetail,
     ClusterMemberResponse,
     ClusteringRunResponse,
+    EmergingIssueOut,
 )
+from app.ml.anomaly import detect_emerging_issues
 from app.services.ingestion import run_full_clustering_pipeline
 
 router = APIRouter(prefix="/issues", tags=["Issues & Clustering"])
@@ -35,6 +37,19 @@ def list_issues(
 
     clusters = query.order_by(desc(IssueCluster.feedback_count)).all()
     return clusters
+
+
+@router.get("/emerging", response_model=List[EmergingIssueOut])
+def get_emerging_issues(
+    lookback_days: int = Query(7, ge=3, le=30, description="Lookback window in days (min 3, max 30)"),
+    db: Session = Depends(get_db),
+):
+    """
+    Detect emerging issue clusters whose complaint volume is suddenly spiking
+    compared to their historical baseline.
+    """
+    alerts = detect_emerging_issues(db=db, lookback_days=lookback_days)
+    return alerts
 
 
 @router.get("/{cluster_id}", response_model=IssueClusterDetail)

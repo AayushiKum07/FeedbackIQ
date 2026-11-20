@@ -105,3 +105,24 @@ export interface OverviewStats {
   trends: TrendPoint[];
   key_insights: KeyInsight[];
 }
+
+export interface TimeSeriesPoint {
+  date: string;
+  count: number;
+}
+
+export interface EmergingIssue {
+  issue_id: string;
+  issue_name: string;
+  category: string;
+  severity: 'critical' | 'high' | 'medium';
+  current_count: number;
+  baseline_avg: number;
+  increase_pct: number;
+  z_score: number;
+  detection_reason: string;
+  window_start: string;
+  window_end: string;
+  trend: TimeSeriesPoint[];
+}
+
